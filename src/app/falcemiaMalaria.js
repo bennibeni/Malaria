@@ -15,14 +15,24 @@ function creaPopolazioneEterozigote(numeroIndividui) {
   }));
 }
 
-function getRegimeSelettivo({ generazione, generazioneArrivoMalaria, s, t, costoPortatoreSenzaMalaria }) {
-  const zanzarePresenti = generazione >= generazioneArrivoMalaria;
+function getRegimeSelettivo({
+  generazione,
+  generazioneArrivoMalaria,
+  generazioneFineMalaria,
+  s,
+  t,
+  costoPortatoreSenzaMalaria,
+}) {
+  const zanzarePresenti =
+    generazione >= generazioneArrivoMalaria &&
+    generazione < generazioneFineMalaria;
 
   if (zanzarePresenti) {
     return {
       zanzarePresenti,
       nome: "malaria presente",
-      descrizione: "Le zanzare portatrici di malaria sono presenti: AS è favorito.",
+      descrizione:
+        "Le zanzare portatrici di malaria sono presenti: AS è favorito.",
       wAA: 1 - s,
       wAS: 1,
       wSS: 1 - t,
@@ -32,7 +42,7 @@ function getRegimeSelettivo({ generazione, generazioneArrivoMalaria, s, t, costo
   return {
     zanzarePresenti,
     nome: "malaria assente",
-    descrizione: "Prima dell’arrivo della malaria: AA è favorito, S è debolmente svantaggioso.",
+    descrizione: "Malaria assente: AA è favorito, S è debolmente svantaggioso.",
     wAA: 1,
     wAS: 1 - costoPortatoreSenzaMalaria,
     wSS: 1 - t,
@@ -79,8 +89,10 @@ function accoppiaCasualmente(popolazione, numeroFigli) {
   const figli = [];
 
   for (let i = 0; i < numeroFigli; i++) {
-    const genitore1 = popolazione[Math.floor(Math.random() * popolazione.length)];
-    const genitore2 = popolazione[Math.floor(Math.random() * popolazione.length)];
+    const genitore1 =
+      popolazione[Math.floor(Math.random() * popolazione.length)];
+    const genitore2 =
+      popolazione[Math.floor(Math.random() * popolazione.length)];
 
     const allele1 = scegliAllele(genitore1.genotipo);
     const allele2 = scegliAllele(genitore2.genotipo);
@@ -125,8 +137,9 @@ function riempiPopolazione(popolazione, dimensioneTarget) {
 
 function simulaFalcemiaMalariaIndividuale({
   numeroIndividui = 1024,
-  generazioni = 100,
-  generazioneArrivoMalaria = 40,
+  generazioni = 120,
+  generazioneArrivoMalaria = 20,
+  generazioneFineMalaria = 100,
   s = 0.15,
   t = 0.8,
   costoPortatoreSenzaMalaria = 0.02,
@@ -139,6 +152,7 @@ function simulaFalcemiaMalariaIndividuale({
     const regime = getRegimeSelettivo({
       generazione,
       generazioneArrivoMalaria,
+      generazioneFineMalaria,
       s,
       t,
       costoPortatoreSenzaMalaria,
@@ -154,8 +168,17 @@ function simulaFalcemiaMalariaIndividuale({
       })),
     });
 
+    const regimeFigli = getRegimeSelettivo({
+      generazione: generazione + 1,
+      generazioneArrivoMalaria,
+      generazioneFineMalaria,
+      s,
+      t,
+      costoPortatoreSenzaMalaria,
+    });
+
     const figli = accoppiaCasualmente(popolazione, numeroIndividui);
-    const figliSopravvissuti = applicaSelezione(figli, regime);
+    const figliSopravvissuti = applicaSelezione(figli, regimeFigli);
 
     popolazione = riempiPopolazione(figliSopravvissuti, numeroIndividui);
   }
@@ -167,6 +190,7 @@ function simulaFalcemiaMalariaIndividuale({
       numeroIndividui,
       generazioni,
       generazioneArrivoMalaria,
+      generazioneFineMalaria,
       s,
       t,
       costoPortatoreSenzaMalaria,

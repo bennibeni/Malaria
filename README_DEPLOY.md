@@ -19,6 +19,20 @@ git add .
 git commit -m "Add Malaria app"
 git push origin main
 
+Per fare il deploy su Vercel:
+
+Vai su vercel.com e accedi con il tuo account GitHub.
+Clicca Add New → Project.
+Seleziona il repository bennibeni/Malaria dalla lista (autorizza Vercel se richiesto).
+Vercel rileverà automaticamente che è un progetto Next.js — le impostazioni di build di default vanno bene:
+
+Build Command: next build
+Output Directory: (lascia default)
+
+Clicca Deploy.
+
+Dopo qualche minuto avrai un URL live tipo [malaria-xxxx.vercel.app](https://malaria-plum.vercel.app/). Ogni push su main su GitHub aggiornerà automaticamente il deploy.
+
 ## ===================================================================================
 
 ## 1. Copia il repository su GitHub
