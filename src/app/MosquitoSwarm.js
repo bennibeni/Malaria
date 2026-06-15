@@ -1,27 +1,51 @@
 "use client";
 
-const MOSQUITO_COUNT = 40;
+import { useMemo } from "react";
+
+import {
+  MOSQUITO_COUNT,
+  MOSQUITO_FADE_TRANSITION_MS,
+  MOSQUITO_POSITION_RANGE,
+} from "./constants";
 
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
 export default function MosquitoSwarm({ active = false, fadeOut = false }) {
-  if (!active && !fadeOut) return null;
+  const mosquitoes = useMemo(
+    () =>
+      Array.from({ length: MOSQUITO_COUNT }, (_, i) => ({
+        id: i,
+        top: randomBetween(
+          MOSQUITO_POSITION_RANGE.topMin,
+          MOSQUITO_POSITION_RANGE.topMax,
+        ),
+        delay: randomBetween(
+          MOSQUITO_POSITION_RANGE.delayMin,
+          MOSQUITO_POSITION_RANGE.delayMax,
+        ),
+        duration: randomBetween(
+          MOSQUITO_POSITION_RANGE.durationMin,
+          MOSQUITO_POSITION_RANGE.durationMax,
+        ),
+        size: randomBetween(
+          MOSQUITO_POSITION_RANGE.sizeMin,
+          MOSQUITO_POSITION_RANGE.sizeMax,
+        ),
+      })),
+    [],
+  );
 
-  const mosquitoes = Array.from({ length: MOSQUITO_COUNT }, (_, i) => ({
-    id: i,
-    top: randomBetween(5, 90),
-    delay: randomBetween(0, 4),
-    duration: randomBetween(5, 12),
-    size: randomBetween(14, 28),
-  }));
+  if (!active && !fadeOut) return null;
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-50 overflow-hidden transition-opacity duration-3000 ${
+      className={`pointer-events-none fixed inset-0 z-50 overflow-hidden transition-opacity ${
         fadeOut ? "opacity-0" : "opacity-100"
       }`}
+      aria-hidden="true"
+      style={{ transitionDuration: `${MOSQUITO_FADE_TRANSITION_MS}ms` }}
     >
       {mosquitoes.map((m) => (
         <div

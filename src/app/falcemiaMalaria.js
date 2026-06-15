@@ -1,3 +1,5 @@
+import { PARAMETRI_SIMULAZIONE } from "./constants";
+
 function scegliAllele(genotipo) {
   if (genotipo === "AA") return "A";
   if (genotipo === "SS") return "S";
@@ -8,11 +10,26 @@ function normalizzaGenotipo(a1, a2) {
   return [a1, a2].sort().join("");
 }
 
-function creaPopolazioneEterozigote(numeroIndividui) {
-  return Array.from({ length: numeroIndividui }, (_, id) => ({
-    id,
-    genotipo: "AS",
-  }));
+function creaPopolazioneIniziale(
+  numeroIndividui,
+  frequenzaInizialeS = PARAMETRI_SIMULAZIONE.frequenzaInizialeS,
+) {
+  const q = Math.min(1, Math.max(0, frequenzaInizialeS));
+  const p = 1 - q;
+
+  return Array.from({ length: numeroIndividui }, (_, id) => {
+    const r = Math.random();
+
+    let genotipo = "SS";
+
+    if (r < p * p) {
+      genotipo = "AA";
+    } else if (r < p * p + 2 * p * q) {
+      genotipo = "AS";
+    }
+
+    return { id, genotipo };
+  });
 }
 
 function getRegimeSelettivo({
@@ -42,7 +59,7 @@ function getRegimeSelettivo({
   return {
     zanzarePresenti,
     nome: "malaria assente",
-    descrizione: "Malaria assente: AA è favorito, S è debolmente svantaggioso.",
+    descrizione: "Malaria assente: AA è favorito, S è svantaggioso.",
     wAA: 1,
     wAS: 1 - costoPortatoreSenzaMalaria,
     wSS: 1 - t,
@@ -67,13 +84,13 @@ function contaGenotipi(popolazione) {
     conteggi[individuo.genotipo]++;
   }
 
-  const totale = popolazione.length;
+  const totale = popolazione.length || 1;
   const alleliA = 2 * conteggi.AA + conteggi.AS;
   const alleliS = 2 * conteggi.SS + conteggi.AS;
   const totaleAlleli = 2 * totale;
 
   return {
-    totale,
+    totale: popolazione.length,
     AA: conteggi.AA,
     AS: conteggi.AS,
     SS: conteggi.SS,
@@ -113,9 +130,13 @@ function applicaSelezione(popolazione, regime) {
   });
 }
 
-function riempiPopolazione(popolazione, dimensioneTarget) {
+function riempiPopolazione(
+  popolazione,
+  dimensioneTarget,
+  frequenzaInizialeS = PARAMETRI_SIMULAZIONE.frequenzaInizialeS,
+) {
   if (popolazione.length === 0) {
-    throw new Error("Popolazione estinta.");
+    return creaPopolazioneIniziale(dimensioneTarget, frequenzaInizialeS);
   }
 
   const nuovaPopolazione = [...popolazione];
@@ -135,67 +156,125 @@ function riempiPopolazione(popolazione, dimensioneTarget) {
   }));
 }
 
-function simulaFalcemiaMalariaIndividuale({
-  numeroIndividui = 1024,
-  generazioni = 120,
-  generazioneArrivoMalaria = 20,
-  generazioneFineMalaria = 100,
-  s = 0.15,
-  t = 0.8,
-  costoPortatoreSenzaMalaria = 0.02,
-} = {}) {
-  let popolazione = creaPopolazioneEterozigote(numeroIndividui);
-
-  const storia = [];
-
-  for (let generazione = 0; generazione <= generazioni; generazione++) {
-    const regime = getRegimeSelettivo({
-      generazione,
-      generazioneArrivoMalaria,
-      generazioneFineMalaria,
-      s,
-      t,
-      costoPortatoreSenzaMalaria,
-    });
-
-    storia.push({
-      generazione,
-      regime,
-      ...contaGenotipi(popolazione),
-      individui: popolazione.map((individuo) => ({
-        id: individuo.id,
-        genotipo: individuo.genotipo,
-      })),
-    });
-
-    const regimeFigli = getRegimeSelettivo({
-      generazione: generazione + 1,
-      generazioneArrivoMalaria,
-      generazioneFineMalaria,
-      s,
-      t,
-      costoPortatoreSenzaMalaria,
-    });
-
-    const figli = accoppiaCasualmente(popolazione, numeroIndividui);
-    const figliSopravvissuti = applicaSelezione(figli, regimeFigli);
-
-    popolazione = riempiPopolazione(figliSopravvissuti, numeroIndividui);
-  }
+function creaSnapshotGenerazione({
+  generationIndex,
+  population,
+  parametri,
+}) {
+  const regime = getRegimeSelettivo({
+    generazione: generationIndex,
+    generazioneArrivoMalaria: parametri.generazioneArrivoMalaria,
+    generazioneFineMalaria: parametri.generazioneFineMalaria,
+    s: parametri.s,
+    t: parametri.t,
+    costoPortatoreSenzaMalaria: parametri.costoPortatoreSenzaMalaria,
+  });
 
   return {
-    popolazioneFinale: popolazione,
-    storia,
-    parametri: {
-      numeroIndividui,
-      generazioni,
-      generazioneArrivoMalaria,
-      generazioneFineMalaria,
-      s,
-      t,
-      costoPortatoreSenzaMalaria,
-    },
+    generationIndex,
+    generazione: generationIndex,
+    regime,
+    ...contaGenotipi(population),
+    individui: population.map((individuo) => ({
+      id: individuo.id,
+      genotipo: individuo.genotipo,
+    })),
   };
 }
 
-export { simulaFalcemiaMalariaIndividuale };
+function creaStatoInizialeFalcemiaMalaria({
+  numeroIndividui = PARAMETRI_SIMULAZIONE.numeroIndividui,
+  generazioni = PARAMETRI_SIMULAZIONE.generazioni,
+  generazioneArrivoMalaria = PARAMETRI_SIMULAZIONE.generazioneArrivoMalaria,
+  generazioneFineMalaria = PARAMETRI_SIMULAZIONE.generazioneFineMalaria,
+  frequenzaInizialeS = PARAMETRI_SIMULAZIONE.frequenzaInizialeS,
+  s = PARAMETRI_SIMULAZIONE.s,
+  t = PARAMETRI_SIMULAZIONE.t,
+  costoPortatoreSenzaMalaria = PARAMETRI_SIMULAZIONE.costoPortatoreSenzaMalaria,
+} = {}) {
+  const parametri = {
+    numeroIndividui,
+    generazioni,
+    generazioneArrivoMalaria,
+    generazioneFineMalaria,
+    frequenzaInizialeS,
+    s,
+    t,
+    costoPortatoreSenzaMalaria,
+  };
+
+  const population = creaPopolazioneIniziale(numeroIndividui, frequenzaInizialeS);
+  const generationIndex = 0;
+  const snapshot = creaSnapshotGenerazione({ generationIndex, population, parametri });
+
+  return {
+    generationIndex,
+    population,
+    snapshot,
+    history: [snapshot],
+    parametri,
+    completed: generazioni <= 0,
+  };
+}
+
+function avanzaStatoFalcemiaMalaria(stato) {
+  if (!stato || stato.completed) return stato;
+
+  const nextGenerationIndex = stato.generationIndex + 1;
+  const regimeFigli = getRegimeSelettivo({
+    generazione: nextGenerationIndex,
+    generazioneArrivoMalaria: stato.parametri.generazioneArrivoMalaria,
+    generazioneFineMalaria: stato.parametri.generazioneFineMalaria,
+    s: stato.parametri.s,
+    t: stato.parametri.t,
+    costoPortatoreSenzaMalaria: stato.parametri.costoPortatoreSenzaMalaria,
+  });
+
+  const figli = accoppiaCasualmente(
+    stato.population,
+    stato.parametri.numeroIndividui,
+  );
+  const figliSopravvissuti = applicaSelezione(figli, regimeFigli);
+  const nextPopulation = riempiPopolazione(
+    figliSopravvissuti,
+    stato.parametri.numeroIndividui,
+    stato.parametri.frequenzaInizialeS,
+  );
+
+  const snapshot = creaSnapshotGenerazione({
+    generationIndex: nextGenerationIndex,
+    population: nextPopulation,
+    parametri: stato.parametri,
+  });
+
+  return {
+    ...stato,
+    generationIndex: nextGenerationIndex,
+    population: nextPopulation,
+    snapshot,
+    history: [...stato.history, snapshot],
+    completed: nextGenerationIndex >= stato.parametri.generazioni,
+  };
+}
+
+function simulaFalcemiaMalariaIndividuale(parametri = {}) {
+  let stato = creaStatoInizialeFalcemiaMalaria(parametri);
+
+  while (!stato.completed) {
+    stato = avanzaStatoFalcemiaMalaria(stato);
+  }
+
+  return {
+    popolazioneFinale: stato.population,
+    storia: stato.history,
+    parametri: stato.parametri,
+  };
+}
+
+export {
+  avanzaStatoFalcemiaMalaria,
+  contaGenotipi,
+  creaStatoInizialeFalcemiaMalaria,
+  getRegimeSelettivo,
+  simulaFalcemiaMalariaIndividuale,
+};

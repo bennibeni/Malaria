@@ -75,3 +75,138 @@ Dopo qualche minuto avrai un URL live tipo [malaria-xxxx.vercel.app](https://mal
 ---
 
 **Nota:** Se hai bisogno di aiuto per configurare Git o Vercel, consulta la documentazione ufficiale o chiedi supporto.
+
+
+
+## 4. Aggiornare l’app dopo il primo deploy (VSCode + GitHub + Vercel)
+
+Dopo il primo deploy non serve rifare tutta la procedura. Il flusso normale è:
+
+```txt
+Modifica codice → Commit → Push → Deploy automatico Vercel
+```
+
+### 1. Apri il progetto in VSCode
+
+Apri la cartella del progetto **Malaria** in VSCode.
+
+Avvia il progetto in locale:
+
+```sh
+npm run dev
+```
+
+Apri il browser:
+
+```txt
+http://localhost:3000
+```
+
+Così puoi verificare le modifiche prima di pubblicarle.
+
+### 2. Modifica il codice
+
+Fai le modifiche ai file normalmente in VSCode.
+
+Quando salvi i file, Next.js aggiorna automaticamente la pagina (hot reload).
+
+### 3. Controlla le modifiche in Source Control
+
+In VSCode:
+
+- clicca sull’icona **Source Control** (ramo Git nella barra laterale)
+- vedrai la lista dei file modificati
+- clicca su un file per vedere il confronto tra vecchio e nuovo codice
+
+### 4. Fai un Commit
+
+Nel pannello **Source Control**:
+
+1. scrivi un messaggio nel campo in alto, ad esempio:
+
+```txt
+Improve malaria simulation
+```
+
+oppure:
+
+```txt
+Fix hydration issue
+```
+
+2. clicca **Commit**
+
+Se VSCode chiede di salvare i file, conferma.
+
+### 5. Fai Push su GitHub
+
+Dopo il commit:
+
+- clicca **Sync Changes**
+- oppure **Push**
+
+VSCode invierà automaticamente le modifiche su GitHub.
+
+In alternativa dal terminale:
+
+```sh
+git add .
+git commit -m "Describe your changes"
+git push origin main
+```
+
+### 6. Deploy automatico su Vercel
+
+Dopo il push:
+
+1. Vai su **vercel.com**
+2. Apri il progetto **Malaria**
+3. Vai nella tab **Deployments**
+
+Vedrai un nuovo deploy partire automaticamente.
+
+Se tutto va bene:
+
+```txt
+Status: Ready
+```
+
+la versione online viene aggiornata automaticamente.
+
+### Errori comuni
+
+#### Build failed su Vercel
+
+Se il deploy fallisce:
+
+1. apri **Deployments**
+2. clicca sul deploy rosso
+3. leggi il log dell’errore
+
+Spesso è uno di questi:
+
+- import sbagliato
+- variabile non definita
+- errore JSX
+- errore ESLint
+
+#### Git rifiuta il push
+
+Se compare qualcosa tipo:
+
+```txt
+rejected
+failed to push
+```
+
+prima fai:
+
+```sh
+git pull origin main
+```
+
+poi:
+
+```sh
+git push origin main
+```
