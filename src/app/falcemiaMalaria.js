@@ -28,7 +28,7 @@ function creaPopolazioneIniziale(
       genotipo = "AS";
     }
 
-    return { id, genotipo };
+    return { id, genotipo, generation: 0, parentIds: null, parentGenotypes: null, inheritedAlleles: null };
   });
 }
 
@@ -117,6 +117,13 @@ function accoppiaCasualmente(popolazione, numeroFigli) {
     figli.push({
       id: i,
       genotipo: normalizzaGenotipo(allele1, allele2),
+      generation: (genitore1.generation ?? 0) + 1,
+      parentIds: [genitore1.id, genitore2.id],
+      parentGenotypes: [
+        genitore1.genotipo,
+        genitore2.genotipo,
+      ],
+      inheritedAlleles: [allele1, allele2],
     });
   }
 
@@ -178,6 +185,10 @@ function creaSnapshotGenerazione({
     individui: population.map((individuo) => ({
       id: individuo.id,
       genotipo: individuo.genotipo,
+      generation: individuo.generation,
+      parentIds: individuo.parentIds,
+      parentGenotypes: individuo.parentGenotypes,
+      inheritedAlleles: individuo.inheritedAlleles,
     })),
   };
 }

@@ -194,6 +194,15 @@ export default function MalariaSimulation() {
     return () => clearTimeout(timer);
   }, [state.simulation, state.isPlaying, state.tickMs]);
 
+  useEffect(() => {
+    // console.log("state keys:", Object.keys(state));
+    // console.log("full state:", state);
+    // console.log("simulation:", state.simulation);
+    if (state.simulation) {
+      console.log("population:", state.simulation.population);
+    }
+  }, [state]);
+
   function nuovaSimulazione() {
     dispatch({
       type: SIMULATION_ACTIONS.RESET,

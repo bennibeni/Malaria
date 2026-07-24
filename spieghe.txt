@@ -1,0 +1,134 @@
+CON QUALE CRITERIO NEL CODICE VIENE GENERATO UN NUOVO INDIVIDUO?
+
+Nel codice attuale, un nuovo individuo viene generato in 3 fasi:
+
+1. scelta casuale dei genitori
+2. ereditarietà mendeliana degli alleli
+3. selezione naturale (sopravvivenza differenziale)
+
+La logica si trova principalmente nel file falcemiaMalaria.js.
+
+1. SCELTA CASUALE DEI GENITORI
+
+Nel codice, i genitori vengono scelti casualmente dalla popolazione:
+
+const genitore1 =
+  popolazione[Math.floor(Math.random() * popolazione.length)];
+
+const genitore2 =
+  popolazione[Math.floor(Math.random() * popolazione.length)];
+
+Criterio:
+
+- ogni individuo ha la stessa probabilità di essere scelto
+- non esistono sesso, età, preferenze o fitness riproduttiva
+- gli accoppiamenti sono completamente casuali
+
+Questo tipo di modello è chiamato “panmixia” (random mating).
+
+Nota importante:
+lo stesso individuo può essere selezionato due volte, quindi nel modello è possibile un accoppiamento implicito con sé stesso.
+
+2. EREDITARIETÀ MENDELIANA
+
+Dopo aver scelto i genitori, ciascun genitore trasmette un allele.
+
+Funzione:
+
+function scegliAllele(genotipo) {
+  if (genotipo === "AA") return "A";
+  if (genotipo === "SS") return "S";
+
+  return Math.random() < 0.5 ? "A" : "S";
+}
+
+Regole:
+
+AA → trasmette sempre A
+SS → trasmette sempre S
+AS → trasmette A oppure S con probabilità 50%
+
+Questo corrisponde alla legge di segregazione di Mendel.
+
+3. COSTRUZIONE DEL GENOTIPO DEL FIGLIO
+
+I due alleli ricevuti vengono combinati per costruire il genotipo:
+
+A + A → AA
+A + S → AS
+S + A → AS
+S + S → SS
+
+Nel codice:
+
+function normalizzaGenotipo(a1, a2) {
+  return [a1, a2].sort().join("");
+}
+
+L’ordine non conta:
+
+AS = SA
+
+Per questo motivo esistono solo tre genotipi distinti:
+
+AA
+AS
+SS
+
+4. GENEALOGIA DEL NUOVO INDIVIDUO
+
+Nel modello esteso ogni figlio salva anche informazioni genealogiche:
+
+{
+  id,
+  genotipo,
+  generation,
+  parentIds,
+  parentGenotypes,
+  inheritedAlleles,
+}
+
+Esempio:
+
+AA × AS
+
+se il genitore AS trasmette S:
+
+{
+  genotipo: "AS",
+  parentGenotypes: ["AA", "AS"],
+  inheritedAlleles: ["A", "S"]
+}
+
+Questo permette di vedere esattamente come il genotipo del figlio è stato generato.
+
+5. SELEZIONE NATURALE
+
+Dopo la nascita, non tutti i figli sopravvivono.
+
+Il codice applica una probabilità di sopravvivenza diversa in base al genotipo e alla presenza o meno della malaria.
+
+Senza malaria:
+
+AA → fitness alta
+AS → leggero svantaggio
+SS → forte svantaggio
+
+Con malaria:
+
+AA → svantaggio dovuto alla malaria
+AS → fitness massima (vantaggio dell’eterozigote)
+SS → svantaggio dovuto all’anemia
+
+Ogni individuo sopravvive con probabilità uguale alla propria fitness.
+
+CONCLUSIONE
+
+Formalmente, il modello implementato è vicino a un modello di genetica delle popolazioni di tipo Wright–Fisher con:
+
+- generazioni discrete
+- mating casuale (panmixia)
+- ereditarietà mendeliana
+- selezione naturale
+- ambiente variabile (malaria presente/assente)
+- popolazione mantenuta circa costante
